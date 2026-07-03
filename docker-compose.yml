@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  db:
+    container_name: 'employee_registry_postgres'
+    image: 'postgres:14'
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - '${POSTGRES_PORT}:${POSTGRES_PORT}'
+
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: employee_registry_backend
+    restart: unless-stopped
+    environment:
+      ENV: local
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      PATH_PREFIX: /api/v1
+      POSTGRES_DB: ${POSTGRES_DB:-employee_registry_db}
+      POSTGRES_HOST: db
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_PORT: 5432
+      DB_CONNECT_RETRY: 20
+      DB_POOL_SIZE: 15
+      DB_ECHO: ${DB_ECHO:-False}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key}
+    volumes:
+      - ./backend:/app
+      - /app/.venv
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+    command: >
+      sh -c "
+        sleep 3 &&
+        poetry run alembic upgrade head &&
+        uvicorn employee_registry.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: employee_registry_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

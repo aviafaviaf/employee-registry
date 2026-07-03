@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Реестр сотрудников</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+                <i class="fas fa-users text-blue-600 mr-3"></i>Реестр сотрудников
+            </h1>
+            <button id="openCreateModalBtn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2">
+                <i class="fas fa-plus-circle"></i> Добавить сотрудника
+            </button>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Поиск</label>
+                    <input type="text" id="searchInput"
+                           placeholder="ФИО / телефон..."
+                           class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-2.5 border" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Пол</label>
+                    <select id="genderFilter"
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-2.5 border bg-white">
+                        <option value="">Все</option>
+                        <option value="true">Мужской</option>
+                        <option value="false">Женский</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Возраст от</label>
+                    <input type="number" id="ageFrom" min="0" max="120"
+                           class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-2.5 border" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Возраст до</label>
+                    <input type="number" id="ageTo" min="0" max="120"
+                           class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-4 py-2.5 border" />
+                </div>
+                <div class="flex gap-2">
+                    <button id="applyFiltersBtn"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition flex-1">
+                        <i class="fas fa-search mr-1"></i> Применить
+                    </button>
+                    <button id="resetFiltersBtn"
+                            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-medium transition">
+                        <i class="fas fa-undo-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Фото</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ФИО</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Возраст</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Телефон</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Пол</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeesTableBody" class="divide-y divide-gray-200 bg-white"></tbody>
+                </table>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+                <div class="text-sm text-gray-600" id="paginationInfo">Показано 0 из 0</div>
+                <div class="flex gap-2">
+                    <button id="prevPageBtn" class="px-4 py-2 border rounded-xl text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                        <i class="fas fa-chevron-left mr-1"></i> Назад
+                    </button>
+                    <button id="nextPageBtn" class="px-4 py-2 border rounded-xl text-sm font-medium hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                        Вперед <i class="fas fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="employeeModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" id="modalBackdrop"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-white" id="modalTitle">Добавить сотрудника</h3>
+                    <button id="closeModalBtn" class="text-white/80 hover:text-white transition text-xl">&times;</button>
+                </div>
+                <form id="employeeForm" class="px-6 py-6 space-y-4">
+                    <input type="hidden" id="editId" />
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Фамилия *</label>
+                            <input type="text" id="formLastName" required
+                                   class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 border" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Имя *</label>
+                            <input type="text" id="formFirstName" required
+                                   class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 border" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Отчество</label>
+                        <input type="text" id="formPatronymic"
+                               class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 border" />
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Дата рождения *</label>
+                            <input type="date" id="formBirthDate" required
+                                   class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 border" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Пол *</label>
+                            <select id="formGender" required
+                                    class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 border bg-white">
+                                <option value="true">Мужской</option>
+                                <option value="false">Женский</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Телефон *</label>
+                        <input type="tel" id="formPhone" required placeholder="+7 999 123-45-67"
+                               class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2.5 border" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Фото</label>
+                        <input type="file" id="formPhoto" accept="image/*"
+                               class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                        <div id="formPhotoPreview" class="mt-2 hidden">
+                            <img id="formPhotoPreviewImg" src="" alt="Preview" class="w-20 h-20 rounded-full object-cover border border-gray-200" />
+                            <button type="button" id="clearPhotoBtn" class="text-sm text-red-500 hover:underline mt-1">Удалить фото</button>
+                        </div>
+                        <input type="hidden" id="formPhotoBase64" />
+                    </div>
+
+                    <div class="flex gap-3 pt-4 border-t border-gray-200">
+                        <button type="submit"
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-xl transition shadow-sm">
+                            <i class="fas fa-save mr-2"></i> <span id="formSubmitLabel">Сохранить</span>
+                        </button>
+                        <button type="button" id="cancelModalBtn"
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-5 py-2.5 rounded-xl transition">
+                            Отмена
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" id="deleteModalBackdrop"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+                <div class="px-6 py-6">
+                    <div class="flex items-center justify-center w-14 h-14 rounded-full bg-red-100 mx-auto mb-4">
+                        <i class="fas fa-trash-alt text-red-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-center text-gray-900">Удалить сотрудника?</h3>
+                    <p class="text-sm text-gray-500 text-center mt-2" id="deleteEmployeeName">Вы уверены?</p>
+                    <input type="hidden" id="deleteId" />
+                    <div class="flex gap-3 mt-6">
+                        <button id="confirmDeleteBtn"
+                                class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium px-5 py-2.5 rounded-xl transition">
+                            <i class="fas fa-check mr-2"></i> Да, удалить
+                        </button>
+                        <button id="cancelDeleteBtn"
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-5 py-2.5 rounded-xl transition">
+                            Отмена
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1/employees';
+        const PAGE_SIZE = 20;
+
+        let currentPage = 1;
+        let totalPages = 0;
+        let totalItems = 0;
+        let editingId = null;
+        let selectedFileBase64 = null;
+
+        const tbody = document.getElementById('employeesTableBody');
+        const searchInput = document.getElementById('searchInput');
+        const genderFilter = document.getElementById('genderFilter');
+        const ageFrom = document.getElementById('ageFrom');
+        const ageTo = document.getElementById('ageTo');
+        const applyBtn = document.getElementById('applyFiltersBtn');
+        const resetBtn = document.getElementById('resetFiltersBtn');
+        const prevBtn = document.getElementById('prevPageBtn');
+        const nextBtn = document.getElementById('nextPageBtn');
+        const paginationInfo = document.getElementById('paginationInfo');
+
+        const modal = document.getElementById('employeeModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const form = document.getElementById('employeeForm');
+        const editId = document.getElementById('editId');
+        const formLastName = document.getElementById('formLastName');
+        const formFirstName = document.getElementById('formFirstName');
+        const formPatronymic = document.getElementById('formPatronymic');
+        const formBirthDate = document.getElementById('formBirthDate');
+        const formGender = document.getElementById('formGender');
+        const formPhone = document.getElementById('formPhone');
+        const formPhoto = document.getElementById('formPhoto');
+        const formPhotoPreview = document.getElementById('formPhotoPreview');
+        const formPhotoPreviewImg = document.getElementById('formPhotoPreviewImg');
+        const clearPhotoBtn = document.getElementById('clearPhotoBtn');
+        const formPhotoBase64 = document.getElementById('formPhotoBase64');
+        const formSubmitLabel = document.getElementById('formSubmitLabel');
+        const openCreateBtn = document.getElementById('openCreateModalBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteId = document.getElementById('deleteId');
+        const deleteEmployeeName = document.getElementById('deleteEmployeeName');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+
+        function getQueryParams() {
+            const params = new URLSearchParams();
+            params.append('page', currentPage);
+            params.append('size', PAGE_SIZE);
+            if (searchInput.value.trim()) params.append('search', searchInput.value.trim());
+            if (genderFilter.value) params.append('gender', genderFilter.value === 'true' ? 'male' : 'female');
+            if (ageFrom.value) params.append('age_from', ageFrom.value);
+            if (ageTo.value) params.append('age_to', ageTo.value);
+            return params;
+        }
+
+        function getGenderLabel(isMale) {
+            return isMale ? 'Мужской' : 'Женский';
+        }
+
+        function getGenderColor(isMale) {
+            return isMale ? 'text-blue-600' : 'text-pink-500';
+        }
+
+        function getFullName(emp) {
+            return [emp.last_name, emp.first_name, emp.patronymic].filter(Boolean).join(' ');
+        }
+
+function createPhotoPopup(base64) {
+    const oldPopup = document.getElementById('photoPopup');
+    if (oldPopup) oldPopup.remove();
+
+    if (!base64) return null;
+
+    const src = base64.startsWith('data:image') ? base64 : `data:image/jpeg;base64,${base64}`;
+
+    const popup = document.createElement('div');
+    popup.id = 'photoPopup';
+    popup.innerHTML = `
+        <img src="${src}" 
+             alt="фото" 
+             class="w-48 h-48 md:w-64 md:h-64 object-cover rounded-xl shadow-2xl border-4 border-white" />
+    `;
+    popup.style.cssText = `
+        position: fixed;
+        pointer-events: none;
+        z-index: 999999;
+        display: none;
+        border-radius: 12px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        transform: translate(12px, 12px);
+    `;
+    document.body.appendChild(popup);
+    return popup;
+}
+
+function getPhotoHtml(base64) {
+    if (base64) {
+        const src = base64.startsWith('data:image') ? base64 : `data:image/jpeg;base64,${base64}`;
+        return `
+            <div class="relative inline-block">
+                <img src="${src}" 
+                     alt="фото" 
+                     data-photo="${base64}"
+                     class="photo-trigger w-10 h-10 rounded-full object-cover border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all duration-200" />
+            </div>
+        `;
+    }
+    return `
+        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
+            <i class="fas fa-user"></i>
+        </div>
+    `;
+}
+
+let photoPopup = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    photoPopup = document.createElement('div');
+    photoPopup.id = 'photoPopup';
+    photoPopup.style.cssText = `
+        position: fixed;
+        pointer-events: none;
+        z-index: 999999;
+        display: none;
+        border-radius: 16px;
+        box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.6);
+        border: 4px solid white;
+        overflow: hidden;
+        transform: translate(16px, 16px);
+        transition: opacity 0.15s ease;
+        opacity: 0;
+    `;
+    document.body.appendChild(photoPopup);
+
+    document.addEventListener('mouseover', function(e) {
+        const target = e.target.closest('.photo-trigger');
+        if (target) {
+            const base64 = target.dataset.photo;
+            if (base64) {
+                const src = base64.startsWith('data:image') ? base64 : `data:image/jpeg;base64,${base64}`;
+                photoPopup.innerHTML = `
+                    <img src="${src}" 
+                         alt="фото" 
+                         class="w-48 h-48 md:w-64 md:h-64 object-cover" />
+                `;
+                photoPopup.style.display = 'block';
+                photoPopup.style.opacity = '1';
+                movePopup(e.clientX, e.clientY);
+            }
+        }
+    });
+
+    document.addEventListener('mouseout', function(e) {
+        const target = e.target.closest('.photo-trigger');
+        if (target) {
+            photoPopup.style.opacity = '0';
+            setTimeout(() => {
+                if (photoPopup.style.opacity === '0') {
+                    photoPopup.style.display = 'none';
+                }
+            }, 150);
+        }
+    });
+
+    document.addEventListener('mousemove', function(e) {
+            if (photoPopup.style.display === 'block') {
+                movePopup(e.clientX, e.clientY);
+            }
+        });
+    });
+
+    function movePopup(x, y) {
+        if (!photoPopup) return;
+        const popup = photoPopup;
+        const rect = popup.getBoundingClientRect();
+        const w = rect.width || 200;
+        const h = rect.height || 200;
+
+        let left = x + 16;
+        let top = y + 16;
+
+        if (left + w > window.innerWidth - 10) {
+            left = x - w - 16;
+        }
+        if (top + h > window.innerHeight - 10) {
+            top = y - h - 16;
+        }
+        if (left < 10) left = 10;
+        if (top < 10) top = 10;
+
+        popup.style.left = left + 'px';
+        popup.style.top = top + 'px';
+    }
+
+    function renderTable(employees) {
+        if (!employees || employees.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="px-4 py-12 text-center text-gray-400">
+                        <i class="fas fa-users text-3xl block mb-2"></i>
+                        Сотрудников не найдено
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = employees.map(emp => `
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-4 py-3 text-sm text-gray-500">${emp.id}</td>
+                <td class="px-4 py-3">${getPhotoHtml(emp.photo_base64)}</td>
+                <td class="px-4 py-3">
+                    <div class="font-medium text-gray-900">${getFullName(emp)}</div>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-700">${emp.age}</td>
+                <td class="px-4 py-3 text-sm text-gray-700">${emp.phone}</td>
+                <td class="px-4 py-3">
+                    <span class="text-sm font-medium ${getGenderColor(emp.is_male)}">${getGenderLabel(emp.is_male)}</span>
+                </td>
+                <td class="px-4 py-3">
+                    <div class="flex items-center justify-center gap-2">
+                        <button onclick="openEditModal(${emp.id})"
+                                class="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-2 rounded-lg transition">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="openDeleteModal(${emp.id}, '${getFullName(emp).replace(/'/g, "\\'")}')"
+                                class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+        async function loadEmployees() {
+            try {
+                const params = getQueryParams();
+                const url = `${API_BASE}/?${params}`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`Ошибка ${res.status}`);
+                const data = await res.json();
+                totalItems = data.total || 0;
+                totalPages = data.pages || 0;
+                currentPage = data.page || 1;
+                renderTable(data.items || []);
+                updatePagination();
+            } catch (err) {
+                console.error('Ошибка загрузки:', err);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-4 py-12 text-center text-red-400">
+                            <i class="fas fa-exclamation-triangle text-3xl block mb-2"></i>
+                            Не удалось загрузить сотрудников
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function updatePagination() {
+            if (totalItems === 0) {
+                paginationInfo.textContent = 'Нет данных';
+            } else {
+                const from = (currentPage - 1) * PAGE_SIZE + 1;
+                const to = Math.min(currentPage * PAGE_SIZE, totalItems);
+                paginationInfo.textContent = `Показано ${from}–${to} из ${totalItems}`;
+            }
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages;
+        }
+
+        async function createEmployee(data) {
+            const res = await fetch(API_BASE + '/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            if (res.status === 413) {
+                throw new Error('Фотография слишком большая! Максимальный размер – 5MB.');
+            }
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Ошибка создания');
+            }
+            return res.json();
+        }
+
+        async function updateEmployee(id, data) {
+            const res = await fetch(`${API_BASE}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            if (res.status === 413) {
+                throw new Error('Фотография слишком большая! Максимальный размер – 5MB.');
+            }
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Ошибка обновления');
+            }
+            return res.json();
+        }
+
+        async function deleteEmployee(id) {
+            const res = await fetch(`${API_BASE}/${id}`, {
+                method: 'DELETE',
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Ошибка удаления');
+            }
+            return true;
+        }
+
+        async function fetchEmployee(id) {
+            const res = await fetch(`${API_BASE}/${id}`);
+            if (!res.ok) throw new Error('Сотрудник не найден');
+            return res.json();
+        }
+
+        function handleFile(file) {
+            if (!file) {
+                selectedFileBase64 = null;
+                formPhotoBase64.value = '';
+                formPhotoPreview.classList.add('hidden');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result;
+                selectedFileBase64 = base64;
+                formPhotoBase64.value = base64;
+                formPhotoPreviewImg.src = base64;
+                formPhotoPreview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        formPhoto.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                handleFile(this.files[0]);
+            } else {
+                handleFile(null);
+            }
+        });
+
+        clearPhotoBtn.addEventListener('click', function() {
+            formPhoto.value = '';
+            formPhotoPreview.classList.add('hidden');
+            selectedFileBase64 = null;
+            formPhotoBase64.value = '';
+        });
+
+        function openModal(title, data = null) {
+            modal.classList.remove('hidden');
+            modalTitle.textContent = title;
+            form.reset();
+            formPhotoPreview.classList.add('hidden');
+            selectedFileBase64 = null;
+            formPhotoBase64.value = '';
+            formGender.value = 'true';
+            if (data) {
+                editingId = data.id;
+                editId.value = data.id;
+                formLastName.value = data.last_name || '';
+                formFirstName.value = data.first_name || '';
+                formPatronymic.value = data.patronymic || '';
+                formBirthDate.value = data.birth_date || '';
+                formGender.value = data.is_male ? 'true' : 'false';
+                formPhone.value = data.phone || '';
+                if (data.photo_base64) {
+                    const src = data.photo_base64.startsWith('data:image') ? data.photo_base64 : `data:image/jpeg;base64,${data.photo_base64}`;
+                    formPhotoPreviewImg.src = src;
+                    formPhotoPreview.classList.remove('hidden');
+                    formPhotoBase64.value = data.photo_base64;
+                    selectedFileBase64 = data.photo_base64;
+                }
+                formSubmitLabel.textContent = 'Обновить';
+            } else {
+                editingId = null;
+                editId.value = '';
+                formSubmitLabel.textContent = 'Сохранить';
+            }
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        window.openEditModal = async function(id) {
+            try {
+                const emp = await fetchEmployee(id);
+                openModal('Редактировать сотрудника', emp);
+            } catch (err) {
+                alert('Не удалось загрузить данные сотрудника');
+            }
+        };
+
+        window.openDeleteModal = function(id, name) {
+            deleteId.value = id;
+            deleteEmployeeName.textContent = `Вы действительно хотите удалить "${name}"?`;
+            deleteModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        };
+
+        function closeDeleteModal() {
+            deleteModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        openCreateBtn.addEventListener('click', () => openModal('Добавить сотрудника'));
+
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelModalBtn.addEventListener('click', closeModal);
+        document.getElementById('modalBackdrop').addEventListener('click', closeModal);
+
+        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+        document.getElementById('deleteModalBackdrop').addEventListener('click', closeDeleteModal);
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                last_name: formLastName.value.trim(),
+                first_name: formFirstName.value.trim(),
+                patronymic: formPatronymic.value.trim() || null,
+                birth_date: formBirthDate.value,
+                is_male: formGender.value === 'true',
+                phone: formPhone.value.trim(),
+                photo_base64: selectedFileBase64 || null,
+            };
+
+            try {
+                if (editingId) {
+                    await updateEmployee(editingId, payload);
+                } else {
+                    await createEmployee(payload);
+                }
+                closeModal();
+                await loadEmployees();
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        confirmDeleteBtn.addEventListener('click', async () => {
+            const id = parseInt(deleteId.value);
+            try {
+                await deleteEmployee(id);
+                closeDeleteModal();
+                await loadEmployees();
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        applyBtn.addEventListener('click', () => {
+            currentPage = 1;
+            loadEmployees();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            genderFilter.value = '';
+            ageFrom.value = '';
+            ageTo.value = '';
+            currentPage = 1;
+            loadEmployees();
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadEmployees();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadEmployees();
+            }
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                currentPage = 1;
+                loadEmployees();
+            }
+        });
+
+        loadEmployees();
+    </script>
+
+</body>
+</html>
