@@ -251,7 +251,7 @@
             params.append('page', currentPage);
             params.append('size', PAGE_SIZE);
             if (searchInput.value.trim()) params.append('search', searchInput.value.trim());
-            if (genderFilter.value) params.append('gender', genderFilter.value === 'true' ? 'male' : 'female');
+            if (genderFilter.value) params.append('is_male', genderFilter.value === 'true' ? 'true' : 'false');
             if (ageFrom.value) params.append('age_from', ageFrom.value);
             if (ageTo.value) params.append('age_to', ageTo.value);
             return params;

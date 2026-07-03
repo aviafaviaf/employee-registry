@@ -37,7 +37,6 @@ def get_employees(
     db: Session = Depends(get_session)
 ):
     """Получение списка сотрудников с фильтрацией"""
-
     filters = EmployeeFilter(
         search=search,
         is_male=is_male,
